@@ -10,7 +10,10 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'debit_card_id', 'amount', 'type', 'status'
+        'debit_card_id',
+        'amount',
+        'type',
+        'status'
     ];
 
     public function debitCard()

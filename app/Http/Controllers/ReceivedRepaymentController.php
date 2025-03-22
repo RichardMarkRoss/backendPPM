@@ -2,64 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Loan;
 use App\Models\ReceivedRepayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReceivedRepaymentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Get repayment schedule for a loan.
      */
-    public function index()
+    public function getRepaymentSchedule($loanId)
     {
-        //
+        $loan = Loan::where('id', $loanId)
+            ->where('user_id', Auth::id())
+            ->with('scheduledRepayments')
+            ->first();
+
+        if (!$loan) {
+            return response()->json(['message' => 'Loan not found or unauthorized'], 403);
+        }
+
+        return response()->json($loan->scheduledRepayments);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Make a loan repayment.
      */
-    public function create()
+    public function makeRepayment(Request $request, $loanId)
     {
-        //
-    }
+        $request->validate([
+            'amount' => 'required|numeric|min:1'
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $loan = Loan::where('id', $loanId)
+            ->where('user_id', Auth::id())
+            ->first();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(ReceivedRepayment $receivedRepayment)
-    {
-        //
-    }
+        if (!$loan) {
+            return response()->json(['message' => 'Loan not found or unauthorized'], 403);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ReceivedRepayment $receivedRepayment)
-    {
-        //
-    }
+        if ($loan->remaining_balance <= 0) {
+            return response()->json(['message' => 'Loan already paid'], 400);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, ReceivedRepayment $receivedRepayment)
-    {
-        //
-    }
+        // Process repayment
+        $amountPaid = min($request->amount, $loan->remaining_balance);
+        ReceivedRepayment::create([
+            'loan_id' => $loan->id,
+            'amount_paid' => $amountPaid,
+            'paid_at' => now(),
+        ]);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ReceivedRepayment $receivedRepayment)
-    {
-        //
+        // Update remaining balance
+        $loan->decrement('remaining_balance', $amountPaid);
+
+        // Mark scheduled repayments as paid if they are fully covered
+        $scheduledRepayments = $loan->scheduledRepayments()->where('status', 'pending')->get();
+        foreach ($scheduledRepayments as $repayment) {
+            if ($amountPaid >= $repayment->amount_due) {
+                $repayment->update(['status' => 'paid']);
+                $amountPaid -= $repayment->amount_due;
+            }
+        }
+
+        // Mark loan as paid if balance is 0
+        if ($loan->remaining_balance <= 0) {
+            $loan->update(['status' => 'paid']);
+        }
+
+        return response()->json([
+            'message' => 'Repayment successful',
+            'remaining_balance' => $loan->remaining_balance,
+        ]);
     }
 }
