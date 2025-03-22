@@ -9,11 +9,11 @@
 - ✔ Implemented CRUD operations
 - ✔ Restricted access to only the authenticated user's debit cards
 
-## 🟡 Transactions System (33% complete)
+## 🟡 Transactions System (Completed)
 ### ⚡ To Do Next:
 - ✔ Create `Transaction` model & migration
-- 🔲 Implement transactions for deposits, withdrawals, and purchases
-- 🔲 Ensure access control (users can only manage their own transactions)
+- ✔ Implement transactions for deposits, withdrawals, and purchases
+- ✔ Ensure access control (users can only manage their own transactions)
 
 ## 🔜 Upcoming Features
 ### Loan System (After Transactions)

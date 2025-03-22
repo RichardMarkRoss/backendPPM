@@ -12,6 +12,10 @@ class DebitCard extends Model
         'user_id', 'card_number', 'balance', 'status'
     ];
 
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
     public function user()
     {
         return $this->belongsTo(User::class);
