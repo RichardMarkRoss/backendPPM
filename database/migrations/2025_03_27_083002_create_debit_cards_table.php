@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('debit_cards', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('card_number')->unique();
-            $table->decimal('balance', 10, 2)->default(0.00);
-            $table->enum('status', ['active', 'blocked', 'expired'])->default('active');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Foreign key to users table
+            $table->string('card_number')->unique(); // Unique card number
+            $table->decimal('balance', 10, 2)->default(0.00); // Balance with 2 decimal places
+            $table->enum('status', ['active', 'inactive', 'blocked'])->default('active'); // Card status
             $table->timestamps();
         });
     }
