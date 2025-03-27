@@ -16,26 +16,23 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        
-    
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role_id' => 'nullable|exists:roles,id',
         ]);
     
-        $roleId = $request->role_id ?? Role::where('name', 'User')->value('id');
+        $role = User::count() === 0 ? Role::where('name', 'Admin')->first() : Role::where('name', 'User')->first();
     
-        if (!$roleId) {
-            return response()->json(['message' => 'No valid role found!'], 400);
+        if (!$role) {
+            return response()->json(['message' => 'No valid role found! Run `php artisan db:seed --class=RolesSeeder`'], 500);
         }
     
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $roleId,
+            'role_id' => $role->id,
         ]);
     
         $token = $user->createToken('API Token')->plainTextToken;
